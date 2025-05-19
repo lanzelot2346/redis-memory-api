@@ -25,7 +25,13 @@ async def save_message(request: Request, user_id: str):
     if not message:
         return {"error": "Message is required."}
 
+    # Push new message to the end of the list
     redis_client.rpush(f"buffer:{user_id}:messages", message)
+
+    # Keep only the last 3 messages
+    redis_client.ltrim(f"buffer:{user_id}:messages", -3, -1)
+
+    # Set expiration
     redis_client.expire(f"buffer:{user_id}:messages", TTL_SECONDS)
 
     if last_update:
